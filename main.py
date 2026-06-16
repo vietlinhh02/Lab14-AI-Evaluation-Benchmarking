@@ -53,6 +53,8 @@ async def run_benchmark(version):
     _, summary = await run_benchmark_with_results(version)
     return summary
 
+from engine.regression_gate import RegressionGate
+
 async def main():
     v1_summary = await run_benchmark("Agent_V1_Base")
     
@@ -63,22 +65,26 @@ async def main():
         print("❌ Không thể chạy Benchmark. Kiểm tra lại data/golden_set.jsonl.")
         return
 
-    print("\n📊 --- KẾT QUẢ SO SÁNH (REGRESSION) ---")
-    delta = v2_summary["metrics"]["avg_score"] - v1_summary["metrics"]["avg_score"]
-    print(f"V1 Score: {v1_summary['metrics']['avg_score']}")
-    print(f"V2 Score: {v2_summary['metrics']['avg_score']}")
-    print(f"Delta: {'+' if delta >= 0 else ''}{delta:.2f}")
+    # Khởi tạo Regression Release Gate với các ngưỡng
+    gate = RegressionGate(
+        min_score_delta=-0.05,        # Cho phép sai số nhỏ do ngẫu nhiên của Judge
+        min_hit_rate=0.85,            # Yêu cầu Hit Rate từ 85% trở lên
+        max_avg_latency=2.0,          # Latency trung bình tối đa 2s mỗi case
+        max_cost_increase_pct=20.0    # Chi phí tăng tối đa 20%
+    )
+
+    pass_gate, gate_report, console_msg = gate.evaluate(v1_summary, v2_summary)
+    
+    print("\n" + console_msg)
+
+    # Lưu thêm thông tin Regression Gate vào file summary
+    v2_summary["regression_gate"] = gate_report
 
     os.makedirs("reports", exist_ok=True)
     with open("reports/summary.json", "w", encoding="utf-8") as f:
         json.dump(v2_summary, f, ensure_ascii=False, indent=2)
     with open("reports/benchmark_results.json", "w", encoding="utf-8") as f:
         json.dump(v2_results, f, ensure_ascii=False, indent=2)
-
-    if delta > 0:
-        print("✅ QUYẾT ĐỊNH: CHẤP NHẬN BẢN CẬP NHẬT (APPROVE)")
-    else:
-        print("❌ QUYẾT ĐỊNH: TỪ CHỐI (BLOCK RELEASE)")
 
 if __name__ == "__main__":
     asyncio.run(main())

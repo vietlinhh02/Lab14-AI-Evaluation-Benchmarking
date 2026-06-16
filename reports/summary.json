@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "version": "Agent_V2_Optimized",
+    "total": 58,
+    "timestamp": "2026-06-16 15:58:11"
+  },
+  "metrics": {
+    "avg_score": 2.9913793103448274,
+    "hit_rate": 1.0,
+    "agreement_rate": 0.35344827586206895,
+    "total_latency": 1.842210100000102,
+    "total_tokens": 53256,
+    "total_estimated_cost": 0.053256000000000005
+  },
+  "regression_gate": {
+    "decision": "ROLLBACK",
+    "checks": {
+      "quality_avg_score": {
+        "v1": 3.060344827586207,
+        "v2": 2.9913793103448274,
+        "delta": -0.06896551724137945,
+        "target": ">= -0.05",
+        "passed": false
+      },
+      "retrieval_hit_rate": {
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "target": ">= 0.85",
+        "passed": true
+      },
+      "performance_avg_latency": {
+        "v1": 0.03193549482762921,
+        "v2": 0.031762243103450036,
+        "delta_pct": -0.5425052128181973,
+        "target": "<= 2.0s",
+        "passed": true
+      },
+      "cost_avg_cost": {
+        "v1": 0.0008848620689655176,
+        "v2": 0.0009182068965517242,
+        "delta_pct": 3.7683644440980166,
+        "target": "<= +20.0%",
+        "passed": true
+      }
+    }
+  }
+}
