@@ -27,12 +27,14 @@ class BenchmarkRunner:
         )
         
         return {
+            "id": test_case.get("id"),
             "test_case": test_case["question"],
             "agent_response": response["answer"],
             "latency": latency,
             "ragas": ragas_scores,
             "judge": judge_result,
-            "status": "fail" if judge_result["final_score"] < 3 else "pass"
+            "status": "fail" if judge_result["final_score"] < 3.0 else "pass",
+            "metadata": test_case.get("metadata", {})
         }
 
     async def run_all(self, dataset: List[Dict], max_concurrent: int = 10) -> List[Dict]:
