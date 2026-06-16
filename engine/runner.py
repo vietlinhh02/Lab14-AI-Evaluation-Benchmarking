@@ -29,22 +29,22 @@ class BenchmarkRunner:
         return {
             "test_case": test_case["question"],
             "agent_response": response["answer"],
-            "retrieved_ids": response.get("retrieved_ids", []),
-            "expected_retrieval_ids": test_case.get("expected_retrieval_ids", []),
             "latency": latency,
             "ragas": ragas_scores,
             "judge": judge_result,
             "status": "fail" if judge_result["final_score"] < 3 else "pass"
         }
 
-    async def run_all(self, dataset: List[Dict], batch_size: int = 5) -> List[Dict]:
+    async def run_all(self, dataset: List[Dict], max_concurrent: int = 10) -> List[Dict]:
         """
-        Chạy song song bằng asyncio.gather với giới hạn batch_size để không bị Rate Limit.
+        Chạy song song bằng asyncio.gather kết hợp với Semaphore để tối ưu Rate Limit thay vì chunking tĩnh.
         """
-        results = []
-        for i in range(0, len(dataset), batch_size):
-            batch = dataset[i:i + batch_size]
-            tasks = [self.run_single_test(case) for case in batch]
-            batch_results = await asyncio.gather(*tasks)
-            results.extend(batch_results)
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def sem_task(case):
+            async with semaphore:
+                return await self.run_single_test(case)
+                
+        tasks = [sem_task(case) for case in dataset]
+        results = await asyncio.gather(*tasks)
         return results
